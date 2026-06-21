@@ -10,8 +10,7 @@ from mcstatus import JavaServer
 
 # 🔐 IMPORTANTE: usa token nuevo (NO el filtrado)
 
-TOKEN = os.getenv("MTUxODM2MDgxMDcwMTcxNzUxNA.GjYpRT.nSDJocL87XsLx1aWbmQdk8UbtGurMnGCM9j99M")
-
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 
 SERVER_IP = "Rainbowmoods.aternos.me"
