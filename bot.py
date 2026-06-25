@@ -6,15 +6,15 @@ from discord.ext import commands, tasks
 from mcstatus import JavaServer
 from flask import Flask
 
-# =====================================
+# =========================
 # WEB SERVER PARA RENDER
-# =====================================
+# =========================
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot funcionando correctamente"
+    return "Bot funcionando"
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
@@ -22,9 +22,9 @@ def run_web():
 
 Thread(target=run_web, daemon=True).start()
 
-# =====================================
+# =========================
 # CONFIGURACIÓN
-# =====================================
+# =========================
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -46,9 +46,9 @@ rol_jugadores = None
 
 estado_anterior = "UNKNOWN"
 
-# =====================================
+# =========================
 # CREAR ROL
-# =====================================
+# =========================
 
 async def crear_rol(guild):
     global rol_jugadores
@@ -67,9 +67,9 @@ async def crear_rol(guild):
 
     rol_jugadores = rol
 
-# =====================================
+# =========================
 # CREAR CANAL
-# =====================================
+# =========================
 
 async def crear_canal(guild):
     global channel_global
@@ -95,9 +95,9 @@ async def crear_canal(guild):
         overwrites=overwrites
     )
 
-# =====================================
+# =========================
 # COMPROBAR SERVIDOR
-# =====================================
+# =========================
 
 def checar_servidor():
     try:
@@ -112,9 +112,9 @@ def checar_servidor():
     except Exception:
         return "OFF"
 
-# =====================================
-# BOT LISTO
-# =====================================
+# =========================
+# EVENTO READY
+# =========================
 
 @bot.event
 async def on_ready():
@@ -131,22 +131,20 @@ async def on_ready():
     if not monitoreo.is_running():
         monitoreo.start()
 
-# =====================================
+# =========================
 # MONITOREO
-# =====================================
+# =========================
 
 @tasks.loop(seconds=30)
 async def monitoreo():
-    global estado_anterior
-    global channel_global
-    global rol_jugadores
+    global estado_anterior, channel_global, rol_jugadores
 
     if channel_global is None:
         return
 
     resultado = checar_servidor()
 
-    # SERVIDOR ENCENDIDO
+    # 🟢 SERVIDOR ENCENDIDO
     if resultado == "ON":
 
         if estado_anterior != "ON":
@@ -159,7 +157,7 @@ async def monitoreo():
 
         return
 
-    # SERVIDOR APAGADO
+    # 🔴 SERVIDOR APAGADO
     if resultado == "OFF":
 
         if estado_anterior != "OFF":
@@ -177,13 +175,13 @@ async def monitoreo():
 
         return
 
-# =====================================
+# =========================
 # INICIAR BOT
-# =====================================
+# =========================
 
 if TOKEN is None:
     raise ValueError(
-        "No se encontró DISCORD_TOKEN en las variables de entorno."
+        "No existe la variable DISCORD_TOKEN en Render."
     )
 
 bot.run(TOKEN)
