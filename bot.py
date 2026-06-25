@@ -6,27 +6,25 @@ from discord.ext import commands, tasks
 from mcstatus import JavaServer
 from flask import Flask
 
-# =========================
+# =====================================
 # WEB SERVER PARA RENDER
-# =========================
+# =====================================
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot de Discord funcionando"
+    return "Bot funcionando correctamente"
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
 
-web_thread = Thread(target=run_web)
-web_thread.daemon = True
-web_thread.start()
+Thread(target=run_web, daemon=True).start()
 
-# =========================
-# CONFIGURACIÓN DEL BOT
-# =========================
+# =====================================
+# CONFIGURACIÓN
+# =====================================
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
@@ -34,6 +32,7 @@ SERVER_IP = "Rainbowmoods.aternos.me"
 SERVER_PORT = 53581
 
 intents = discord.Intents.default()
+intents.guilds = True
 
 bot = commands.Bot(
     command_prefix="!",
@@ -47,12 +46,9 @@ rol_jugadores = None
 
 estado_anterior = "UNKNOWN"
 
-fallos_consecutivos = 0
-MAX_FALLOS = 3
-
-# =========================
+# =====================================
 # CREAR ROL
-# =========================
+# =====================================
 
 async def crear_rol(guild):
     global rol_jugadores
@@ -71,20 +67,20 @@ async def crear_rol(guild):
 
     rol_jugadores = rol
 
-# =========================
+# =====================================
 # CREAR CANAL
-# =========================
+# =====================================
 
 async def crear_canal(guild):
     global channel_global
 
-    existing = discord.utils.get(
+    canal = discord.utils.get(
         guild.text_channels,
         name=channel_name
     )
 
-    if existing:
-        channel_global = existing
+    if canal:
+        channel_global = canal
         return
 
     overwrites = {
@@ -99,9 +95,9 @@ async def crear_canal(guild):
         overwrites=overwrites
     )
 
-# =========================
+# =====================================
 # COMPROBAR SERVIDOR
-# =========================
+# =====================================
 
 def checar_servidor():
     try:
@@ -113,18 +109,12 @@ def checar_servidor():
 
         return "ON"
 
-    except TimeoutError:
-        return "ERROR"
-
-    except ConnectionError:
-        return "ERROR"
-
     except Exception:
         return "OFF"
 
-# =========================
-# READY
-# =========================
+# =====================================
+# BOT LISTO
+# =====================================
 
 @bot.event
 async def on_ready():
@@ -141,31 +131,23 @@ async def on_ready():
     if not monitoreo.is_running():
         monitoreo.start()
 
-# =========================
+# =====================================
 # MONITOREO
-# =========================
+# =====================================
 
 @tasks.loop(seconds=30)
 async def monitoreo():
-    global (
-        estado_anterior,
-        fallos_consecutivos,
-        channel_global,
-        rol_jugadores
-    )
+    global estado_anterior
+    global channel_global
+    global rol_jugadores
 
     if channel_global is None:
         return
 
     resultado = checar_servidor()
 
-    # =====================
-    # ONLINE
-    # =====================
-
+    # SERVIDOR ENCENDIDO
     if resultado == "ON":
-
-        fallos_consecutivos = 0
 
         if estado_anterior != "ON":
 
@@ -177,13 +159,8 @@ async def monitoreo():
 
         return
 
-    # =====================
-    # OFFLINE
-    # =====================
-
+    # SERVIDOR APAGADO
     if resultado == "OFF":
-
-        fallos_consecutivos = 0
 
         if estado_anterior != "OFF":
 
@@ -200,28 +177,13 @@ async def monitoreo():
 
         return
 
-    # =====================
-    # ERROR
-    # =====================
-
-    if resultado == "ERROR":
-
-        fallos_consecutivos += 1
-
-        if fallos_consecutivos >= MAX_FALLOS:
-
-            if estado_anterior != "ERROR":
-
-                await channel_global.send(
-                    "⚠️ Error al verificar el servidor (timeout o fallo de conexión)"
-                )
-
-                estado_anterior = "ERROR"
-
-        return
-
-# =========================
+# =====================================
 # INICIAR BOT
-# =========================
+# =====================================
+
+if TOKEN is None:
+    raise ValueError(
+        "No se encontró DISCORD_TOKEN en las variables de entorno."
+    )
 
 bot.run(TOKEN)
